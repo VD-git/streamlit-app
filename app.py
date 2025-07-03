@@ -33,10 +33,7 @@ if __name__ == "__main__":
     st.title('Stream Project')
 
     st.write(f'Addr IP {st.context.headers['X-Forwarded-For']}')
-    st.write(f'Addr USER {st.context.headers['X-Streamlit-User']}')
-    
 
     logger.info(f"ip {st.context.headers['X-Forwarded-For']}")
-    logger.info(f"user {st.context.headers['X-Streamlit-User']}")
 
 
