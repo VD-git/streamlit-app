@@ -32,7 +32,7 @@ if __name__ == "__main__":
     
     st.title('Stream Project')
 
-    st.write(f'Addr IP {st.context.headers.__dict__}')
+    st.write(f'Addr IP {st.context.headers.__dict__.get('_headers')}')
 
     logger.info(f"ip {st.context.headers['X-Forwarded-For']}")
 
