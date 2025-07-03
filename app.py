@@ -3,6 +3,7 @@ import logging
 from logging import getLogger
 from streamlit import runtime
 from streamlit.runtime.scriptrunner import get_script_run_ctx
+from streamlit.web.server.websocket_headers import _get_websocket_headers
 
 logger = getLogger()
 if logger.handlers:  # logger is already setup, don't setup again
@@ -30,9 +31,9 @@ def get_remote_ip() -> str:
 if __name__ == "__main__":
     
     st.title('Stream Project')
-    
-    st.write(f'Addr IP {get_remote_ip()}')
 
-    logger.info(f"ip {get_remote_ip()}")
+    st.write(f'Addr IP {st.context.headers['host']}')
+
+    logger.info(f"ip {st.context.headers['host']}")
 
 
