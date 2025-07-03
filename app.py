@@ -28,12 +28,20 @@ def get_remote_ip() -> str:
 
     return session_info.request.remote_ip
 
+    
+
 if __name__ == "__main__":
     
     st.title('Stream Project')
 
     st.write(f"Addr IP {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
 
+    headers = _get_websocket_headers()
+
+    st.write(f"Addr IP {headers}")
+
     logger.info(f"ip {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
+
+
 
 
