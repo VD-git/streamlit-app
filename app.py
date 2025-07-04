@@ -11,36 +11,17 @@ if logger.handlers:  # logger is already setup, don't setup again
 else:
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.INFO)
-
-def get_remote_ip() -> str:
-    """Get remote ip."""
-
-    try:
-        ctx = get_script_run_ctx()
-        if ctx is None:
-            return None
-
-        session_info = runtime.get_instance().get_client(ctx.session_id)
-        if session_info is None:
-            return None
-    except Exception as e:
-        return None
-
-    return session_info.request.remote_ip
-
     
 
 if __name__ == "__main__":
     
     st.title('Stream Project')
 
-    st.write(f"Addr IP {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
+    st.write(f"Addr IP {st.context.headers.__dict__}")
 
-    headers = _get_websocket_headers()
+    st.write(f"Addr IP {st.context.ip_address}")
 
-    st.write(f"Addr IP {headers}")
-
-    logger.info(f"ip {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
+    logger.info(f"ip {st.context.ip_address}")
 
 
 
