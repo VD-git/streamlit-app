@@ -8,9 +8,6 @@ if logger.handlers:  # logger is already setup, don't setup again
 else:
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.INFO)
-    
-
-
 
 if __name__ == "__main__":
     
