@@ -1,2 +1,3 @@
 streamlit
 logging
+pymongo==4.13.2
