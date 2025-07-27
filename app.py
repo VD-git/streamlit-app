@@ -19,7 +19,6 @@ if __name__ == "__main__":
     collection_name = dbname["user_1_items"]
     
     for it in collection_name.find():
-        print(it)
         st.write(it)
     
     st.title('Stream Project')
