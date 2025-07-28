@@ -1,7 +1,10 @@
 import streamlit as st
 import logging
 from logging import getLogger
-import pymongo
+import uuid
+
+from datetime import datetime
+from utils import ChatbotMistral, init_connection
 
 logger = getLogger()
 if logger.handlers:  # logger is already setup, don't setup again
@@ -9,36 +12,54 @@ if logger.handlers:  # logger is already setup, don't setup again
 else:
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.INFO)
-    
-def init_connection():
-    client = pymongo.MongoClient(st.secrets["mongo"]["uri"])
-    return client['Cluster0']
 
 if __name__ == "__main__":
     dbname = init_connection()
-    collection_name = dbname["user_1_items"]
+    collection_name = dbname["streamlit"]
+    cm = ChatbotMistral()
     
-    for it in collection_name.find():
-        st.write(it)
+    st.title('Chatbot Mistral + Mongo Project')
     
-    st.title('Stream Project')
-
-    # st.write("Please log in to continue (username `test`, password `test`).")
-
-    # username = st.text_input("Username")
-    # password = st.text_input("Password", type="password")
     
-    # if st.button("Log in", type="primary"):
-    #     if username == "test" and password == "test":
-    #         st.session_state.logged_in = True
-    #         st.success("Logged in successfully!")
-    #         st.write(st.session_state.logged_in)
-    #     else:
-    #         st.error("Incorrect username or password")
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.start_time = datetime.now()
+        
+        st.session_state.payload = {
+            "_id": st.session_state.session_id,
+            "time": st.session_state.start_time,
+            "messages": []
+            }
+        
+    logger.info(st.session_state.session_id)
+    
+    # Load last messages replied
+    for message in st.session_state.payload["messages"]:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            
+    message = st.chat_input("Enter message")
 
-    st.write(f"Addr IP {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
-
-    logger.info(f"ip {st.context.headers.__dict__.get('_headers').get('X-Forwarded-For')}")
+    if message:
+        # User
+        st.chat_message("user").markdown(message)
+        st.session_state.payload["messages"].append({"role": "user", "content": message})
+        
+        # Assistant
+        response = cm.make_question(message)
+        st.session_state.payload["messages"].append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
+        
+        # Mongo
+        logger.info(st.session_state.payload)
+        result = collection_name.replace_one(
+            {"_id": st.session_state.session_id},
+            st.session_state.payload,
+            upsert = True
+            )
+        logger.info(result)
+        
 
 
 
