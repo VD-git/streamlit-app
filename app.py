@@ -31,24 +31,31 @@ if __name__ == "__main__":
             "time": st.session_state.start_time,
             "messages": []
             }
+        logger.info(st.session_state.session_id)
         
-    logger.info(st.session_state.session_id)
+    if "pending_message" not in st.session_state:
+        st.session_state.pending_message = None
     
     # Load last messages replied
     for message in st.session_state.payload["messages"]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+    
+    input_disabled = st.session_state.pending_message is not None
+    message = st.chat_input("Enter message", disabled=input_disabled)
+    
+    if message and not input_disabled:
+        st.session_state.pending_message = message
+        st.rerun()
             
-    message = st.chat_input("Enter message")
-
-    if message:
+    if st.session_state.pending_message:
         # User
-        st.chat_message("user").markdown(message)
-        st.session_state.payload["messages"].append({"role": "user", "content": message})
+        st.chat_message("user").markdown(st.session_state.pending_message)
+        st.session_state.payload["messages"].append({"role": "user", "content": st.session_state.pending_message})
         
         # Assistant
         time.sleep(1) # Maximum requests per second for the free api is one request per second, avoid breaking this limit and receive error 429 here
-        response = cm.make_question(message)
+        response = cm.make_question(st.session_state.pending_message)
         st.session_state.payload["messages"].append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
@@ -61,6 +68,9 @@ if __name__ == "__main__":
             upsert = True
             )
         logger.info(result)
+        
+        st.session_state.pending_message = None
+        st.rerun()
         
 
 
