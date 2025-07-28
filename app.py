@@ -3,7 +3,7 @@ import logging
 from logging import getLogger
 import uuid
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils import ChatbotMistral, init_connection
 
 logger = getLogger()
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
-        st.session_state.start_time = datetime.now()
+        st.session_state.start_time = datetime.now() - timedelta(hours=3)
         
         st.session_state.payload = {
             "_id": st.session_state.session_id,
