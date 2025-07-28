@@ -2,6 +2,7 @@ import streamlit as st
 import logging
 from logging import getLogger
 import uuid
+import time
 
 from datetime import datetime, timedelta
 from utils import ChatbotMistral, init_connection
@@ -46,6 +47,7 @@ if __name__ == "__main__":
         st.session_state.payload["messages"].append({"role": "user", "content": message})
         
         # Assistant
+        time.sleep(1) # Maximum requests per second for the free api is one request per second, avoid breaking this limit and receive error 429 here
         response = cm.make_question(message)
         st.session_state.payload["messages"].append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
