@@ -4,6 +4,9 @@ import streamlit as st
 import pymongo
 
 def init_connection():
+    """
+    Function that makes the connection with Mongo, secrets are inserted directly into the streamlit interface
+    """
     client = pymongo.MongoClient(st.secrets["mongo"]["uri"])
     return client['Cluster0']
 
@@ -16,6 +19,13 @@ class ChatbotMistral:
         self.history_messages = []
 
     def make_question(self, question:str):
+        """
+        Method to give a reply to the user
+        Args:
+            question (str): question made by the user
+        Output:
+            response (str): response by the chatbot
+        """
         if len(self.history_messages) > 0:
             messages = self.system_message + self.history_messages + [{"role": "user", "content": question}]
             response = self.client.chat.complete(model = self.model, messages = messages).choices[0].message.content
