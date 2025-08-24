@@ -1,3 +1,4 @@
+sqlite3==3.35.*
 streamlit
 logging
 pymongo==4.13.2
