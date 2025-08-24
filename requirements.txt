@@ -3,3 +3,4 @@ logging
 pymongo==4.13.2
 mistralai==1.9.1
 pypdf
+langchain-text-splitters
