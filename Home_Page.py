@@ -21,5 +21,8 @@ st.markdown(
     """
 )
 
+import sqlite3
+st.write(sqlite3.sqlite_version)
+
 
 st.sidebar.success("👉 Select a project from the sidebar")
