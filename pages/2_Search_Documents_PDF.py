@@ -5,7 +5,7 @@ import uuid
 import time
 
 from datetime import datetime, timedelta
-from utils import Embeddings
+from utils import ChatEmbeddings
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
@@ -19,7 +19,7 @@ else:
 if __name__ == "__main__":
     uploaded_file = st.file_uploader("Choose a file")
     input_disabled = True
-    embeddings = Embeddings()
+    embeddings = ChatEmbeddings()
 
     client = chromadb.CloudClient(
         api_key=st.secrets["chromadb"]["api_key"],
