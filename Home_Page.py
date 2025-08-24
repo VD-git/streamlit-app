@@ -1,5 +1,6 @@
 # Home.py
 import streamlit as st
+import os
 
 __import__('pysqlite3')
 import sys
