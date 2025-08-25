@@ -6,6 +6,8 @@ import pandas as pd
 from io import StringIO
 import pypdf
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import chromadb
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 def init_connection():
     """

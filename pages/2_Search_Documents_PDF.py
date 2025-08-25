@@ -6,8 +6,6 @@ import time
 
 from datetime import datetime, timedelta
 from utils import ChatEmbeddings
-import chromadb
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 logger = getLogger()
 if logger.handlers:  # logger is already setup, don't setup again
