@@ -33,9 +33,9 @@ if __name__ == "__main__":
     
     # Query after receiving user input
     if message:
-        result = embeddings.collection.query(query_texts=[message], n_results=5)
+        query_result = embeddings.collection.query(query_texts=[message])
         st.write("Top results:")
-        for doc in result['documents'][0]:
+        for doc in query_result['documents'][0]:
             st.write(f"- {doc}")
 
         
