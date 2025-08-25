@@ -39,7 +39,7 @@ if __name__ == "__main__":
         print(context)
         coi = ChatbotOpenAI(context = context)
         print(message)
-        reply_back = coi.make_question(question = message)
+        reply_back = coi.make_question(message)
         # st.write("Top results:")
         # for doc in query_result['documents'][0]:
         #     st.write(f"- {doc}")

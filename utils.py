@@ -8,6 +8,9 @@ import pypdf
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from openai import AzureOpenAI
+from tenacity import (retry, stop_after_attempt, wait_random_exponential)
+
 
 def init_connection():
     """
@@ -85,3 +88,43 @@ class ChatEmbeddings:
         metadatas = [i.get("metadata") for i in summary_text]
 
         self.collection.add(ids=ids, documents=contents, metadatas=metadatas)
+
+
+class ChatbotOpenAI:
+    def __init__(self, context):
+        self.api_key = st.secrets["azure"]["api_key"]
+        self.model = "gpt-4o-mini"
+        self.client = AzureOpenAI(
+            api_version=st.secrets["azure"]["api_version"],
+            azure_endpoint=st.secrets["azure"]["azure_endpoint"],
+            api_key=self.api_key,
+        )
+        self.system_message = [
+            {
+                "role": "system", 
+                "content": f"""
+                You are an AI Assistant to reply based o the information that it were provided between triple bracks, in case you werent able to find a good answer, just reply that 'Sorry, I could not find anything about'
+                Context: ```{context}```
+                """
+            }
+        ]
+
+        self.history_messages = []
+
+    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+    def make_question(self, question:str):
+        print(question)
+        if len(self.history_messages) > 0:
+            messages = self.system_message + self.history_messages + [{"role": "user", "content": question}]
+            response = self.client.chat.completions.create(model = self.model, messages = messages)
+            content = response.choices[0].message.content
+            self.history_messages += [{"role": "user", "content": question}, {"role": "assistant", "content": content if content is not None else 'Vazio'}]
+            self.response = response
+            return content
+        else:
+            messages = self.system_message + [{"role": "user", "content": question}]
+            response = self.client.chat.completions.create(model = self.model, messages = messages)
+            content = response.choices[0].message.content
+            self.history_messages += [{"role": "user", "content": question}, {"role": "assistant", "content": content if content is not None else 'Vazio'}]
+            self.response = response
+            return content
