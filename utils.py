@@ -43,7 +43,11 @@ class ChatbotMistral:
 
 class ChatEmbeddings:
     def __init__(self):
-        pass
+        self.client = chromadb.CloudClient(
+            api_key=st.secrets["chromadb"]["api_key"],
+            tenant=st.secrets["chromadb"]["tenant"],
+            database=st.secrets["chromadb"]["database"]
+        )
 
     def read_pdf(self, uploaded_file):
         summary_text = []
@@ -60,3 +64,22 @@ class ChatEmbeddings:
                 for chunck in range(len(chuncks)):
                     summary_text.append({"id": "_".join([str(page), str(chunck)]), "content": chuncks[chunck], "metadata": {"page": page, "chunck": chunck}})
         return num_pages, summary_text
+
+    def upload_data(self, summary_text, collection_name = "my_collection"):
+        self.collection = self.client.get_or_create_collection(
+                name = collection_name,
+                embedding_function = OpenAIEmbeddingFunction(
+                    model_name = "text-embedding-3-small",
+                    api_key=st.secrets["azure"]["api_key"],
+                    api_base =st.secrets["azure"]["azure_endpoint"],
+                    api_type="azure",
+                    api_version=st.secrets["azure"]["api_version"],
+                    deployment_id = "text-embedding-3-small"
+                )
+        )
+
+        ids = [i.get("id") for i in summary_text]
+        contents = [i.get("content") for i in summary_text]
+        metadatas = [i.get("metadata") for i in summary_text]
+
+        self.collection.add(ids=ids, documents=contents, metadatas=metadatas)
