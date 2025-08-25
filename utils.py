@@ -5,7 +5,7 @@ import pymongo
 import pandas as pd
 from io import StringIO
 import pypdf
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from openai import AzureOpenAI
@@ -56,7 +56,10 @@ class ChatEmbeddings:
 
     def read_pdf(self, uploaded_file):
         summary_text = []
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=30)
+        # text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=30)
+        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            encoding_name="cl100k_base", chunk_size=100, chunk_overlap=0
+        )
 
         with uploaded_file as file:
             reader = pypdf.PdfReader(file)
@@ -71,6 +74,7 @@ class ChatEmbeddings:
         return num_pages, summary_text
 
     def upload_data(self, summary_text, collection_name = "my_collection"):
+        self.client.delete_collection(name="my_collection")
         self.collection = self.client.get_or_create_collection(
                 name = collection_name,
                 embedding_function = OpenAIEmbeddingFunction(

@@ -32,17 +32,13 @@ if __name__ == "__main__":
     message = st.chat_input("Ask a question about the PDF", disabled=input_disabled)
     
     # Query after receiving user input
-    if message:
+    if message and embeddings.collection:
+        st.write(message)
         query_result = embeddings.collection.query(query_texts=[message])
         documents = [doc for doc in query_result['documents'][0]]
         context = ", ".join(documents)
-        print(context)
         coi = ChatbotOpenAI(context = context)
-        print(message)
         reply_back = coi.make_question(question = message)
-        # st.write("Top results:")
-        # for doc in query_result['documents'][0]:
-        #     st.write(f"- {doc}")
         st.write(reply_back)
 
         
