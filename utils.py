@@ -53,6 +53,7 @@ class ChatEmbeddings:
             tenant=st.secrets["chromadb"]["tenant"],
             database=st.secrets["chromadb"]["database"]
         )
+        self.client.delete_collection(name="my_collection")
 
     def read_pdf(self, uploaded_file):
         summary_text = []
@@ -74,7 +75,6 @@ class ChatEmbeddings:
         return num_pages, summary_text
 
     def upload_data(self, summary_text, collection_name = "my_collection"):
-        self.client.delete_collection(name="my_collection")
         self.collection = self.client.get_or_create_collection(
                 name = collection_name,
                 embedding_function = OpenAIEmbeddingFunction(
