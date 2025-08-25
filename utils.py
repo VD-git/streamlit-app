@@ -117,7 +117,6 @@ class ChatbotOpenAI:
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
     def make_question(self, question:str):
-        print(question)
         if len(self.history_messages) > 0:
             messages = self.system_message + self.history_messages + [{"role": "user", "content": question}]
             response = self.client.chat.completions.create(model = self.model, messages = messages)
