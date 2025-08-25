@@ -7,3 +7,4 @@ pypdf==6.0.0
 langchain-text-splitters==0.3.9
 openai==1.99.9
 chromadb==1.0.17
+tiktoken
