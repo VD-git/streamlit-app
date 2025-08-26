@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     embeddings = st.session_state.embeddings
     input_disabled = True
-    uploaded_file = st.file_uploader("Choose a file")
+    uploaded_file = st.file_uploader("Choose a file", type = ['pdf'])
     SIMILARITY_THRESHOLD = st.sidebar.slider(
         "🔍 Cosine Similarity Threshold (lower = more relevant)", 
         min_value=0.0, 
