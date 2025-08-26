@@ -53,6 +53,12 @@ class ChatEmbeddings:
             tenant=st.secrets["chromadb"]["tenant"],
             database=st.secrets["chromadb"]["database"]
         )
+        self.name = None
+        self.collection_list = [col.name for col in self.client.list_collections()]
+
+    def list_collections(self):
+        self.collection_list = [col.name for col in self.client.list_collections()]
+        return self.collection_list
 
     def read_pdf(self, uploaded_file):
         summary_text = []
@@ -64,6 +70,8 @@ class ChatEmbeddings:
         with uploaded_file as file:
             reader = pypdf.PdfReader(file)
 
+            self.name = uploaded_file.name
+
             num_pages = len(reader.pages)
         
             for page in range(num_pages):
@@ -73,10 +81,10 @@ class ChatEmbeddings:
                     summary_text.append({"id": "_".join([str(page), str(chunck)]), "content": chuncks[chunck], "metadata": {"page": page, "chunck": chunck}})
         return num_pages, summary_text
 
-    def upload_data(self, summary_text, collection_name = "my_collection"):
+    def upload_data(self, summary_text):
         # self.client.delete_collection(name="my_collection")
         self.collection = self.client.get_or_create_collection(
-                name = collection_name,
+                name = self.name,
                 embedding_function = OpenAIEmbeddingFunction(
                     model_name = "text-embedding-3-small",
                     api_key=st.secrets["azure"]["api_key"],
@@ -93,6 +101,27 @@ class ChatEmbeddings:
 
         self.collection.add(ids=ids, documents=contents, metadatas=metadatas)
 
+    def load_collection(self, collection_name):
+        self.collection = self.client.get_collection(
+                name = collection_name,
+                embedding_function = OpenAIEmbeddingFunction(
+                    model_name = "text-embedding-3-small",
+                    api_key=st.secrets["azure"]["api_key"],
+                    api_base =st.secrets["azure"]["azure_endpoint"],
+                    api_type="azure",
+                    api_version=st.secrets["azure"]["api_version"],
+                    deployment_id = "text-embedding-3-small"
+                )
+        )
+
+    def delete_collection(self, collection_name: str):
+        try:
+            self.client.delete_collection(name=collection_name)
+            if self.collection_name == collection_name:
+                self.collection = None
+                self.collection_name = None
+        except Exception as e:
+            print(f"Error deleting collection '{collection_name}': {e}")
 
 class ChatbotOpenAI:
     def __init__(self, context):
