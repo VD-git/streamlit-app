@@ -5,29 +5,43 @@ import pymongo
 import pandas as pd
 from io import StringIO
 import pypdf
-from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter, CharacterTextSplitter
+)
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from openai import AzureOpenAI
 from tenacity import (retry, stop_after_attempt, wait_random_exponential)
+import re
+import unicodedata
 
 
 def init_connection():
     """
-    Function that makes the connection with Mongo, secrets are inserted directly into the streamlit interface
+    Function that makes the connection with Mongo.
+    Secrets are inserted directly into the streamlit interface
     """
     client = pymongo.MongoClient(st.secrets["mongo"]["uri"])
     return client['Cluster0']
+
 
 class ChatbotMistral:
     def __init__(self):
         self.api_key = st.secrets["mistral"]["api_key"]
         self.client = Mistral(api_key=self.api_key)
         self.model = "mistral-small-latest"
-        self.system_message = [{"role": "system", "content": "Você é um chatbot que responde o que perguntarem para você"}]
+        self.system_message = [
+            {
+                "role": "system",
+                "content": (
+                    "Você é um chatbot "
+                    "que responde o que perguntarem para você."
+                )
+            }
+        ]
         self.history_messages = []
 
-    def make_question(self, question:str):
+    def make_question(self, question: str):
         """
         Method to give a reply to the user
         Args:
@@ -70,7 +84,11 @@ class ChatEmbeddings:
         with uploaded_file as file:
             reader = pypdf.PdfReader(file)
 
-            self.name = uploaded_file.name
+            name = uploaded_file.name
+            name = name.replace(' ', '_')
+            name = unicodedata.normalize('NFKD', name)
+            
+            self.name = re.sub(r'[^\w._]', '', name)
 
             num_pages = len(reader.pages)
         

@@ -41,7 +41,7 @@ if __name__ == "__main__":
         st.write(f"Number of pages: {num_pages}")
     
         # Use filename as collection name
-        collection_name = uploaded_file.name
+        collection_name = embeddings.name
         embeddings.upload_data(summary_text)
     
         # Update session state
