@@ -20,4 +20,4 @@
             | self.prompt
             | self.llm
             | StrOutputParser()
-        )```
+        )
