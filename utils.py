@@ -306,7 +306,12 @@ class RAGLangChain:
     def invoke(self, question):
         response = self.chain.invoke(question)
         contexts = self.retriever.invoke(question)
-        pages = [i.metadata.get('page') + 1 for i in contexts]
+        if self.file_extension == 'pdf':
+            pages = [i.metadata.get('page') + 1 for i in contexts]
+        elif self.file_extension == 'csv':
+            pages = [i.metadata.get('row') + 1 for i in contexts]
+        else:
+            pages = ["No page reference for html files"]
 
         metric_faithfulness = self.faithfulness_chain.invoke({
           "question": question,
