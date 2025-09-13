@@ -25,7 +25,7 @@ st.markdown(
     --------------------------------------------------------------------------------------------------------------------------
 
     **2. Search Documents PDF**
-    You can upload a PDF and, using the **RAG (Retrieval-Augmented Generation)** architecture, ask questions about its content.
+    You can upload a PDF and, using the **RAG (Retrieval Augmented Generation)** architecture, ask questions about its content.
 
     - **Similarity score**: Adjust how closely the answers match your query:
       - `0` → Only exact matches are considered. Some queries may return nothing.
@@ -34,6 +34,19 @@ st.markdown(
 
     - The system uses **GPT-4o-mini** for chat, retrieving information from **ChromaDB**.
     > ⚠️ *Note: All uploaded PDFs are stored in the Chroma database. You can remove later your collection if needed.*
+    --------------------------------------------------------------------------------------------------------------------------
+
+    **3. RAG Langchain**
+    This section you are able to upload a PDF, CSV or HTML, using **RAG (Retrieval Augmented Generation)**, ask question about its content.
+
+    - Response will be query up to 3 chunks;
+        - **Pages/Rows**:
+            - For PDFs, the specific pages that were searched;
+            - For CSVs, the rows that were considered;
+            - For HTML, no page or row details are shown.
+        - **Faithfulness Score**: Indicates how closely the generated response matches original content (0-1);
+        - **Context Precision Score**: Shows how well the response aligns with retrieved context (0-1).
+    - The system uses **GPT-4o-mini** for chat, retrieving information from **ChromaDB**.
     --------------------------------------------------------------------------------------------------------------------------
     """
 )
