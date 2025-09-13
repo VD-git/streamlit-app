@@ -12,7 +12,7 @@
 - Streamlit: Creates the interface where ChromaDB Retriever and Azure API will be called;
 - Azure API: `gpt-4o-mini` is being used as default;
 - ChromaDB (Local): Uploaded files are temporarily cached and indexed for retrieval; they do not persist after the session;
-- Files Acepted: CSV, PDF and HTML.
+- Files Acepted: CSV, PDF and HTML;
 - Architecture: RAG with Langchain using a LCEL architecture
   ```python
       self.chain = (
@@ -21,3 +21,4 @@
             | self.llm
             | StrOutputParser()
         )
+  ```
