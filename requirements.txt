@@ -8,3 +8,9 @@ langchain-text-splitters==0.3.9
 openai==1.99.9
 chromadb==1.0.17
 tiktoken
+unstructured
+ragas==0.3.3
+langchain-chroma==0.2.5
+langchain-community==0.3.29
+langchain-core==0.3.75
+langchain-openai==0.3.32

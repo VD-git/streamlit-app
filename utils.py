@@ -5,15 +5,28 @@ import pymongo
 import pandas as pd
 from io import StringIO
 import pypdf
-from langchain_text_splitters import (
-    RecursiveCharacterTextSplitter, CharacterTextSplitter
-)
+import tempfile
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from openai import AzureOpenAI
 from tenacity import (retry, stop_after_attempt, wait_random_exponential)
 import re
 import unicodedata
+
+from langchain_text_splitters import (
+    RecursiveCharacterTextSplitter, CharacterTextSplitter
+)
+from langchain_chroma import Chroma
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai import (AzureOpenAIEmbeddings, AzureChatOpenAI)
+from langchain_community.document_loaders import (PyPDFLoader, UnstructuredHTMLLoader)
+from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+
+from ragas.integrations.langchain import EvaluatorChain
+from ragas.metrics import context_precision, faithfulness
 
 
 def init_connection():
@@ -178,3 +191,133 @@ class ChatbotOpenAI:
             self.history_messages += [{"role": "user", "content": question}, {"role": "assistant", "content": content if content is not None else 'Vazio'}]
             self.response = response
             return content
+
+class RAGLangChain:
+    def __init__(self, file_name, file_path, chunk_size = 100, chunk_overlap = 20):
+        self.separators = ["\n\n", "\n", " ", ""]
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self.file_extension = self._define_file_extension(file_name)
+        self.file_name = file_name
+        self.file_path = file_path
+        self._load_file()
+        self.split_file(split_type = 'semantic')
+        self._load_embedding_function()
+        self._load_vector_store()
+        self._load_language_model()
+        self._load_template()
+        self._load_chain()
+        self._load_evaluators()
+    def _define_file_extension(self, file_name: str):
+        extension = file_name.split('.')[-1]
+        assert extension in ['pdf', 'csv', 'html'], 'Only csv, html and pdf extesions are accepted'
+        return extension
+    def _load_file(self):
+        # assert os.path.exists(self.file_name), f"{self.file_name} not found. Files available: {os.listdir()}"
+        if self.file_extension.lower() == 'csv':
+            self.loader = CSVLoader(file_path = self.file_path)
+            self.documents = self.loader.load()
+        elif self.file_extension.lower() == 'html':
+            self.loader = UnstructuredHTMLLoader(file_path = self.file_path)
+            self.documents = self.loader.load()
+        else:
+            self.loader = PyPDFLoader(file_path = self.file_path)
+            self.documents = self.loader.load()
+    def split_file(self, split_type = 'recursiv'):
+        assert split_type in ['recursive', 'semantic'], "Please, be assured selecting a valid searchable engine: `recursive` and `semantic`."
+        # Keeping the usage of RecursiveCharacterTextSplitter instead of CharacterTextSplitter
+        # Considering that this way is feasible to use more separators
+        if split_type == 'recursive':
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                separators = self.separators,
+                chunk_size = self.chunk_size,
+                chunk_overlap = self.chunk_overlap
+            )
+            self.chunks = self.text_splitter.split_documents(self.documents)
+        else:
+        # Another way of segment chunks is by semantic meaning, expesivier but more certain what is being searched for here
+            self.text_splitter = SemanticChunker(
+                embeddings=AzureOpenAIEmbeddings(
+                    openai_api_key=st.secrets['azure']['api_key'],
+                    model="text-embedding-3-small",
+                    azure_endpoint=st.secrets["azure"]["azure_endpoint"]
+                ),
+                breakpoint_threshold_type="gradient",
+                breakpoint_threshold_amount=0.8
+            )
+            self.chunks = self.text_splitter.split_documents(self.documents)
+    def _load_embedding_function(self):
+        self.embedding_function = AzureOpenAIEmbeddings(
+            openai_api_key=st.secrets['azure']['api_key'],
+            model="text-embedding-3-small",
+            azure_endpoint=st.secrets["azure"]["azure_endpoint"]
+        )
+    def _load_vector_store(self):
+        persist_dir = tempfile.mkdtemp()
+        self.vector_store = Chroma.from_documents(
+            documents = self.chunks,
+            embedding=self.embedding_function,
+            # Doesn't need to persist the data in this case
+            persist_directory=persist_dir
+        )
+        
+        self.retriever = self.vector_store.as_retriever(
+            search_type = "similarity",
+            search_kwargs = {"k": 3}
+        )
+    def _load_language_model(self):
+        self.llm = AzureChatOpenAI(
+            api_key=st.secrets['azure']['api_key'],
+            azure_endpoint=st.secrets["azure"]["azure_endpoint"],
+            api_version=st.secrets["azure"]["api_version"],
+            azure_deployment="gpt-4o-mini",
+            temperature=0.0,
+            max_tokens=4096,
+            top_p=1.0,
+        )
+    def _load_template(self):
+        self.prompt = ChatPromptTemplate.from_template(
+            """
+            Using the following pieces of context to answer the question at the end. If you don't know the answer, say you don't know.
+            Questions may come in other languages, in this case reply into the anguage that it is asked.
+            Context: {context}
+            Question: {question}
+            """
+        )
+    def _load_chain(self):
+        self.chain = (
+            {"context": self.retriever, "question": RunnablePassthrough()}
+            | self.prompt
+            | self.llm
+            | StrOutputParser()
+        )
+    def _load_evaluators(self):
+        self.faithfulness_chain = EvaluatorChain(
+            metric = faithfulness,
+            llm = self.llm,
+            embeddings = self.embedding_function
+        )
+        
+        self.context_chain = EvaluatorChain(
+            metric = context_precision,
+            llm = self.llm,
+            embeddings = self.embedding_function
+        )
+    def invoke(self, question):
+        response = self.chain.invoke(question)
+        contexts = self.retriever.invoke(question)
+        pages = [i.metadata.get('page') + 1 for i in contexts]
+
+        metric_faithfulness = self.faithfulness_chain.invoke({
+          "question": question,
+          "answer": response,
+          "contexts": contexts
+        }).get('faithfulness')
+
+        metric_context = self.context_chain.invoke({
+          "question": question,
+          "ground_truth": response,
+          "contexts": contexts
+        }).get('context_precision')
+        return {"response": response, "faithfulness": metric_faithfulness, "context_precision": metric_context, "pages": pages}
+        
