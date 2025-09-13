@@ -14,3 +14,4 @@ langchain-chroma==0.2.5
 langchain-community==0.3.29
 langchain-core==0.3.75
 langchain-openai==0.3.32
+langchain-experimental==0.3.4
