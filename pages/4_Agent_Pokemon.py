@@ -33,6 +33,9 @@ if __name__ == "__main__":
         st.session_state.pokemon_call = PokemonAgent()
         logger.info(st.session_state.session_id)
 
+    if st.session_state.pokemon_call.POKEMON is None:
+        st.write("Give instructions for finding your pokemon")
+    
     if st.session_state.pokemon_call.POKEMON is not None:
         imgs = pokemon_images(pokemon_name = st.session_state.pokemon_call.POKEMON, n = 9)
         cols = st.columns(3)
