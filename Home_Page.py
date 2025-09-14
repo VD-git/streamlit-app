@@ -51,6 +51,9 @@ st.markdown(
         - **Context Precision Score**: Shows how well the response aligns with retrieved context (0-1).
     - The system uses **GPT-4o-mini** for chat, retrieving information from **ChromaDB**.
     --------------------------------------------------------------------------------------------------------------------------
+
+    **4. Agent Pokemon**
+    --------------------------------------------------------------------------------------------------------------------------
     """
 )
 
