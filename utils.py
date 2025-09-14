@@ -11,6 +11,8 @@ from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from openai import AzureOpenAI
 from tenacity import (retry, stop_after_attempt, wait_random_exponential)
 import re
+import requests
+import random
 import unicodedata
 
 from langchain_text_splitters import (
@@ -45,6 +47,27 @@ def init_connection():
     client = pymongo.MongoClient(st.secrets["mongo"]["uri"])
     return client['Cluster0']
 
+def pokemon_images(pokemon_name: str, n: int):
+
+    def flatten_urls(pokemon_urls: dict) -> list:
+        urls = []
+        if isinstance(pokemon_urls, dict):
+            for v in pokemon_urls.values():
+                urls.extend(flatten_urls(v))
+        elif isinstance(pokemon_urls, str) and pokemon_urls.startswith("https"):
+            urls.append(pokemon_urls)
+        return urls
+    
+    def sample_urls(pokemon_urls:list, n:int) -> list:
+        return random.sample(pokemon_urls, n)
+
+    response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon_name.lower()}")
+
+    if response.status_code == 200:
+        pokemon_urls = flatten_urls(response.json().get('sprites'))
+        return sample_urls(pokemon_urls, n)
+    else:
+        return None
 
 class ChatbotMistral:
     def __init__(self):
@@ -406,7 +429,7 @@ class PokemonAgent:
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + last_message
 
         if self.POKEMON is not None:
-            return {"messages": [AIMessage(content=f"Pokemon already descovered here: {self.POKEMON}. Reset the page if it's wanted another search.")]}
+            return {"messages": [AIMessage(content=f"Pokemon already discovered here: {self.POKEMON}. Reset the page if it's wanted another search.")]}
         elif isinstance(last_message, AIMessage) and last_message.tool_calls:
             return {"messages": [AIMessage(content=last_message.tool_calls[0]["response"])]}
         else:
@@ -450,8 +473,8 @@ class PokemonAgent:
         return app
 
     def stream_memory_responses(self, user_input: str):
-        print([event for event in self.app.stream({"messages": [("user", user_input)]}, self.config)])
         last_message = [event for event in self.app.stream({"messages": [("user", user_input)]}, self.config)][-1]
         last_key = list(last_message.keys())[0]
         return last_message.get(last_key).get('messages')[-1].content
+
         
