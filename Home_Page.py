@@ -1,9 +1,9 @@
 # Home.py
 import streamlit as st
 
-# __import__('pysqlite3')
-# import sys
-# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 
 st.set_page_config(
@@ -53,6 +53,9 @@ st.markdown(
     --------------------------------------------------------------------------------------------------------------------------
 
     **4. Agent Pokemon**
+
+    This system uses a Langchain architecture with multi-agents, powered by the Azure API `gpt-4o-mini`. helps you in the search for your Pokémon, and once it's found, confirm with "yes" to receive its images. This chatbot supports real-time conversations and uses [MongoDB](https://www.mongodb.com/) to store chat history securely.
+    > ⚠️ *Note: All messages exchanged with the chatbot are saved in the database.*
     --------------------------------------------------------------------------------------------------------------------------
     """
 )

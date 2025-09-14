@@ -22,3 +22,11 @@
             | StrOutputParser()
         )
   ```
+
+# Multi-Agents Langchain
+- Streamlit: Creates the interface where ChromaDB Retriever and Azure API will be called;
+- Azure API: `gpt-4o-mini` is being used as default. It also used for the custom tools for the agents;
+- PokeAPI: API to retrieve the images from the pokemons;
+- Mongo: Every session that it is created has your history recorded there;
+- Architecture for the Multi-Agents:
+  ![Multi-Agent Architecture Built](images/Multi-Agent Architecture Built.JPG)
