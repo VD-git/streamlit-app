@@ -34,7 +34,7 @@ if __name__ == "__main__":
         logger.info(st.session_state.session_id)
 
     if st.session_state.pokemon_call.POKEMON is None:
-        st.write("Give instructions for finding your pokemon")
+        st.write("Describe your pokemon so we can find it :)")
     
     if st.session_state.pokemon_call.POKEMON is not None:
         imgs = pokemon_images(pokemon_name = st.session_state.pokemon_call.POKEMON, n = 9)
