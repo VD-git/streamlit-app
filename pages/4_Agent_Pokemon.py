@@ -5,7 +5,7 @@ import uuid
 import time
 
 from datetime import datetime, timedelta
-from utils import init_connection, PokemonAgent
+from utils import pokemon_images, init_connection, PokemonAgent
 
 logger = getLogger()
 if logger.handlers:  # logger is already setup, don't setup again
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     dbname = init_connection()
     collection_name = dbname["pokemon"]
     
-    st.title('Pokemon Chatbot')
+    st.title('Agent Pokemon ⚡🐭')
     
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
@@ -32,16 +32,27 @@ if __name__ == "__main__":
 
         st.session_state.pokemon_call = PokemonAgent()
         logger.info(st.session_state.session_id)
+
+    if st.session_state.pokemon_call.POKEMON is not None:
+        imgs = pokemon_images(pokemon_name = st.session_state.pokemon_call.POKEMON, n = 9)
+        cols = st.columns(3)
+        for idx, img in enumerate(imgs):
+            col = cols[idx % 3]
+            with col:
+                st.image(img, width = 100)
         
     if "pending_message" not in st.session_state:
         st.session_state.pending_message = None
     
     # Load last messages replied
-    for message in st.session_state.payload["messages"]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-    
-    input_disabled = st.session_state.pending_message is not None
+    if st.session_state.pokemon_call.POKEMON is None:
+        for message in st.session_state.payload["messages"]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+    if st.session_state.pokemon_call.POKEMON is None:
+        input_disabled = st.session_state.pending_message is not None
+    else:
+        input_disabled = True
     message = st.chat_input("Enter message", disabled=input_disabled)
     
     if message and not input_disabled:
@@ -54,7 +65,7 @@ if __name__ == "__main__":
         st.session_state.payload["messages"].append({"role": "user", "content": st.session_state.pending_message})
         
         # Assistant
-        time.sleep(1) # Maximum requests per second for the free api is one request per second, avoid breaking this limit and receive error 429 here
+        time.sleep(1)
         response = st.session_state.pokemon_call.stream_memory_responses(st.session_state.pending_message)
         st.session_state.payload["messages"].append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
@@ -71,6 +82,7 @@ if __name__ == "__main__":
         
         st.session_state.pending_message = None
         st.rerun()
+
         
 
 
