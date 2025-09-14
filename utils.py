@@ -421,7 +421,7 @@ class PokemonAgent:
             self.POKEMON = self.retrieve_pokemon_ai_message(state)
             return {"messages": [AIMessage(content=f"Great! We discovered your Pokémon! {self.POKEMON}")]}
         else:
-            return {"messages": [AIMessage(content=f"Is your pokemon {last_message.content}? Reply with \033[1myes\033[0m if it is, or help giving more info about it :).")]}
+            return {"messages": [AIMessage(content=f"Is your pokemon {last_message.content}? Reply with **yes** if it is, or help giving more info about it :).")]}
     
     
     def should_continue(self, state: MessagesState):
