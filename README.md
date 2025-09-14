@@ -29,4 +29,5 @@
 - PokeAPI: API to retrieve the images from the pokemons;
 - Mongo: Every session that it is created has your history recorded there;
 - Architecture for the Multi-Agents:
-  ![Multi-Agent Architecture Built](images/Multi-Agent Architecture Built.JPG)
+
+  ![Multi-Agent Architecture Built](images/Multi_Agent_Architecture_Built.jpg)
