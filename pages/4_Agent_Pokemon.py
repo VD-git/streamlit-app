@@ -40,6 +40,8 @@ if __name__ == "__main__":
             col = cols[idx % 3]
             with col:
                 st.image(img, width = 100)
+
+        st.write(f"We gotcha {st.session_state.pokemon_call.POKEMON}! 🎮")
         
     if "pending_message" not in st.session_state:
         st.session_state.pending_message = None
@@ -71,14 +73,14 @@ if __name__ == "__main__":
         with st.chat_message("assistant"):
             st.markdown(response)
         
-        # # Mongo
-        # logger.info(st.session_state.payload)
-        # result = collection_name.replace_one(
-        #     {"_id": st.session_state.session_id},
-        #     st.session_state.payload,
-        #     upsert = True
-        #     )
-        # logger.info(result)
+        # Mongo
+        logger.info(st.session_state.payload)
+        result = collection_name.replace_one(
+            {"_id": st.session_state.session_id},
+            st.session_state.payload,
+            upsert = True
+            )
+        logger.info(result)
         
         st.session_state.pending_message = None
         st.rerun()
