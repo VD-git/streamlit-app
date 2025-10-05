@@ -451,7 +451,7 @@ class PokemonAgent:
         return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
 
     def response_guide_node(self, state: MessagesState):
-        return {"messages": [AIMessage(content="Here you should provide info so I can find your pokemon")]}
+        return {"messages": [AIMessage(content="Here you should provide info so I can find your pokemon. Or giving more features of it.")]}
     
     def call_initial_discover_pokemon(self, state: MessagesState):
         SYSTEM_PROMPT = """
@@ -507,7 +507,6 @@ class PokemonAgent:
             return {"messages": [self.model_with_tools_exists.invoke(messages)]}
 
     def should_continue_guesser(self, state: MessagesState):
-        print("GUESSER")
         last_message = state["messages"][-1]
 
         # Checking if a tool will be called
