@@ -417,8 +417,8 @@ class PokemonAgent:
             SystemMessage(
                 content=(
                     f"""
-                    You are an AI Assistant and your function is to identified which is the pokemon that is based on the description given.
-                    Maybe you can receive other informations in order to discover the pokemon, like its evolution, background, not physical features.
+                    You are an AI Assistant and your function is to identified which is the pokémon that is based on the description given.
+                    Maybe you can receive other informations in order to discover the pokémon, like its evolution, background, not physical features.
                     In case it is not possible to identify reply exactly the following between triple backticks: {PokemonAgent.POKEMON_NOT_IDENTIFIED},
                     just reply its name, nothing more"""
                 )
@@ -463,11 +463,11 @@ class PokemonAgent:
     
     def retrieve_pokemon_ai_message(self, state: MessagesState):
         """Function that returns the last pokemon guesser"""
-        # Here it has -2 because I will always check if the pokemon exists before trying to guess, being always last second tool
+        # Here it has -2 because I will always check if the pokémon exists before trying to guess, being always last second tool
         return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
 
     def response_guide_node(self, state: MessagesState):
-        return {"messages": [AIMessage(content="Here you should provide info so I can find your pokemon. Or giving more features of it.")]}
+        return {"messages": [AIMessage(content="Here you should provide info so I can find your Pokémon. Or giving more features of it.")]}
     
     def initial_pokemon_guess(self, state: MessagesState):
         SYSTEM_PROMPT = f"""
@@ -481,15 +481,15 @@ class PokemonAgent:
     
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + last_messages
 
-        # When pokemon is already identified and also confirmed
+        # When Pokémon is already identified and also confirmed
         if self.POKEMON is not None:
-            return {"messages": [AIMessage(content=f"Pokemon already discovered here: {self.POKEMON}. Reset the page if it's wanted another search.")]}
+            return {"messages": [AIMessage(content=f"Pokémon already discovered here: {self.POKEMON}. Reset the page if it's wanted another search.")]}
         # Response considering the feedback from the tool
         elif isinstance(last_message, ToolMessage):
             if last_message.content == self.POKEMON_NOT_IDENTIFIED:
                 return {"messages": [AIMessage(content="Please, provide more info to identify the pokemon")]}
             else:
-                return {"messages": [AIMessage(content=f"Pokemon: {last_message.content}")]}
+                return {"messages": [AIMessage(content=f"Pokémon: {last_message.content}")]}
         # Based on the human message i need to call a llm in order to have the possibility to call the tools
         else:
             return {"messages": [self.model_with_tools_identify.invoke(messages)]}
@@ -497,10 +497,10 @@ class PokemonAgent:
     def confirm_pokemon_existence(self, state: MessagesState):
         """Handles user confirmation of the identified Pokémon and validates its existence using the PokéAPI"""
         SYSTEM_PROMPT = f"""
-        You are an AI Assistant and your function is to identified if the pokemon that is being passed exists into the database from PokeAPI.
+        You are an AI Assistant and your function is to identified if the pokémon that is being passed exists into the database from PokeAPI.
         Tool that will be used is pokemon_exists and will return a boolean weather exists or not.
         In case tool returns False, reply exactly the following between triple backticks: {self.POKEMON_NOT_EXIST}
-        In case tool returns True, reply just the name of the pokemon.
+        In case tool returns True, reply just the name of the pokémon.
         """
         last_messages, last_message = state["messages"], state["messages"][-1]
     
@@ -508,13 +508,13 @@ class PokemonAgent:
         
         last_message = state["messages"][-1]
 
-        # Evaluating weather the pokemon found before actually exists inside the database
+        # Evaluating weather the pokémon found before actually exists inside the database
         if isinstance(last_message, ToolMessage):
             pokemon = self.retrieve_pokemon_ai_message(state)
             if last_message.content == "true":
-                return {"messages": [AIMessage(content=f"Is your pokemon {pokemon}? Reply with **yes/y** if it is, or help giving more info about it :).")]}
+                return {"messages": [AIMessage(content=f"Is your pokémon {pokemon}? Reply with **yes/y** if it is, or help giving more info about it :).")]}
             else:
-                return {"messages": [AIMessage(content=f"Pokemon {pokemon} does not exist in PokeAPI database, try another one, please")]}
+                return {"messages": [AIMessage(content=f"Pokémon {pokemon} does not exist in PokeAPI database, try another one, please")]}
         elif self.is_positive(self.retrieve_last_human_message(state).strip().lower()):
             self.POKEMON = self.retrieve_pokemon_ai_message(state)
             return {"messages": [AIMessage(content=f"Great! We discovered your Pokémon! {self.POKEMON}")]}
@@ -542,7 +542,7 @@ class PokemonAgent:
             if last_message.content == "Please, provide more info to identify the pokemon":
                 return END
             # Option 2 from the tool
-            elif ("Pokemon:" in last_message.content) or (self.is_positive(self.retrieve_last_human_message(state).strip().lower())):
+            elif ("Pokémon:" in last_message.content) or (self.is_positive(self.retrieve_last_human_message(state).strip().lower())):
                 return "evaluator"
             # Option if the tool wasn't even called
             else:
@@ -554,7 +554,7 @@ class PokemonAgent:
         """
         last_message = state["messages"][-1]
 
-        # Achieving this edge it is already sure that you have a pokemon to check
+        # Achieving this edge it is already sure that you have a Pokémon to check
         if last_message.tool_calls:
             return "tools_pokemon_checker"
         else:
