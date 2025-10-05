@@ -1,5 +1,6 @@
 # Home.py
 import streamlit as st
+from utils import PokemonAgent
 
 __import__('pysqlite3')
 import sys
@@ -60,6 +61,14 @@ st.markdown(
     - **chatbot:** Responsible for guessing the Pokémon based on user input;
     - **evaluator:** Validates whether the guessed Pokémon exists in the database;
     - **guide_node:** Provides better guidance and messaging to the user throughout the interaction.
+    """
+)
+
+with st.expander("🔍 View Architecture Diagram of LangGraph"):
+    st.image(PokemonAgent().graph_architecture(), caption="Architecture LangGraph", use_container_width=True)
+
+st.markdown(
+    """
     > ⚠️ *Note: All messages exchanged with the chatbot are saved in the database.*
     --------------------------------------------------------------------------------------------------------------------------
     """
