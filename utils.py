@@ -467,7 +467,7 @@ class PokemonAgent:
         return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
 
     def response_guide_node(self, state: MessagesState):
-        return {"messages": [AIMessage(content="Here you should provide info so I can find your Pokémon. Or giving more features of it.")]}
+        return {"messages": [AIMessage(content="Tell me anything you remember about your Pokémon. Like how it looks, type, powers, or any clue or detail that it might help finding it :)")]}
     
     def initial_pokemon_guess(self, state: MessagesState):
         SYSTEM_PROMPT = f"""
