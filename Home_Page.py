@@ -65,7 +65,7 @@ st.markdown(
 )
 
 with st.expander("🔍 View Architecture Diagram of LangGraph"):
-    st.image(PokemonAgent().graph_architecture(), caption="Architecture LangGraph", use_container_width=True)
+    st.image(PokemonAgent().graph_architecture(), caption="Architecture LangGraph", width=670)
 
 st.markdown(
     """

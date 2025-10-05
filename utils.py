@@ -464,7 +464,10 @@ class PokemonAgent:
     def retrieve_pokemon_ai_message(self, state: MessagesState):
         """Function that returns the last pokemon guesser"""
         # Here it has -2 because I will always check if the pokémon exists before trying to guess, being always last second tool
-        return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
+        try:
+            return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
+        except:
+            return None
 
     def response_guide_node(self, state: MessagesState):
         return {"messages": [AIMessage(content="Tell me anything you remember about your Pokémon. Like how it looks, type, powers, or any clue or detail that it might help finding it :)")]}
@@ -517,7 +520,10 @@ class PokemonAgent:
                 return {"messages": [AIMessage(content=f"Pokémon {pokemon} does not exist in PokeAPI database, try another one, please")]}
         elif self.is_positive(self.retrieve_last_human_message(state).strip().lower()):
             self.POKEMON = self.retrieve_pokemon_ai_message(state)
-            return {"messages": [AIMessage(content=f"Great! We discovered your Pokémon! {self.POKEMON}")]}
+            if self.POKEMON is not None:
+                return {"messages": [AIMessage(content=f"Great! We discovered your Pokémon! {self.POKEMON}")]}
+            else:
+                return {"messages": [AIMessage(content="Please enter a description of the Pokémon. Don't confirm just yet")]}
         # Based on the human message i need to call a llm in order to have the possibility to call the tools
         else:
             return {"messages": [self.model_with_tools_exists.invoke(messages)]}
