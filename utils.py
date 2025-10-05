@@ -362,7 +362,7 @@ class PokemonAgent:
 
     POKEMON_NOT_IDENTIFIED = "```Not able to identified```"
     POKEMON_NOT_EXIST = "```Pokémon does not exist```"
-    POKEMON_CONFIRMATIONS = ["yes", "y", "yep", "yeah"]
+    POKEMON_CONFIRMATIONS = ["yes", "yep", "yeah"]
 
     def __init__(self):
         self.llm = AzureChatOpenAI(
@@ -384,7 +384,7 @@ class PokemonAgent:
     def is_positive(resp: str) -> bool:
         for phrase in PokemonAgent.POKEMON_CONFIRMATIONS:
             similarity = fuzz.partial_ratio(resp, phrase)
-            if similarity >= 80:  # Adjustable threshold
+            if similarity >= 95:
                 return True
         return False
 
