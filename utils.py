@@ -13,6 +13,7 @@ from tenacity import (retry, stop_after_attempt, wait_random_exponential)
 import re
 import requests
 import random
+from rapidfuzz import fuzz
 import unicodedata
 
 from langchain_text_splitters import (
@@ -381,7 +382,11 @@ class PokemonAgent:
 
     @staticmethod
     def is_positive(resp: str) -> bool:
-        return resp.strip().lower() in PokemonAgent.POKEMON_CONFIRMATIONS
+        for phrase in PokemonAgent.POKEMON_CONFIRMATIONS:
+            similarity = fuzz.partial_ratio(resp, phrase)
+            if similarity >= 80:  # Adjustable threshold
+                return True
+        return False
 
     @staticmethod
     @tool
@@ -413,10 +418,12 @@ class PokemonAgent:
                 content=(
                     f"""
                     You are an AI Assistant and your function is to identified which is the pokemon that is based on the description given.
-                    In case it is not possible to identify reply exactly the following between triple backticks: {PokemonAgent.POKEMON_NOT_IDENTIFIED}, just reply its name, nothing more"""
+                    Maybe you can receive other informations in order to discover the pokemon, like its evolution, background, not physical features.
+                    In case it is not possible to identify reply exactly the following between triple backticks: {PokemonAgent.POKEMON_NOT_IDENTIFIED},
+                    just reply its name, nothing more"""
                 )
             ),
-            HumanMessage(content=f"Discover which one is my pokemon based on the description. Description: {description}")
+            HumanMessage(content=f"The user is trying to identify a Pokémon with the following clue: {description}")
         ]
         response = llm.invoke(messages)
         return response.content
@@ -462,14 +469,14 @@ class PokemonAgent:
     def response_guide_node(self, state: MessagesState):
         return {"messages": [AIMessage(content="Here you should provide info so I can find your pokemon. Or giving more features of it.")]}
     
-    def call_initial_discover_pokemon(self, state: MessagesState):
+    def initial_pokemon_guess(self, state: MessagesState):
         SYSTEM_PROMPT = f"""
-        You are an AI Assistant and your function is to identified which is the pokemon that is based on the description given.
-        Case the pokemon is not explicitable said you can use de tool identify_pokemon in order to help you find it.
-        In case it is not possible to identify which pokemon exactly, or you are not a 100 % sure, reply exactly the following between triple backticks: {self.POKEMON_NOT_IDENTIFIED}.
-        When is sure of the pokemon, just reply its name, nothing more
+        You are an AI Assistant and your function is to identify which Pokémon is being described.
+        The user might give vague or indirect clues like evolution stages, background, trainer, etc.
+        If there's enough information or even partial clues (like 'evolution from Pikachu'), use the tool `identify_pokemon` to infer the likely Pokémon.
+        If it's not possible to identify, return exactly: {self.POKEMON_NOT_IDENTIFIED}
+        If sure, return only the name of the Pokémon, nothing else.
         """
-        print("CHATBOT")
         last_messages, last_message = state["messages"], state["messages"][-1]
     
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + last_messages
@@ -487,7 +494,8 @@ class PokemonAgent:
         else:
             return {"messages": [self.model_with_tools_identify.invoke(messages)]}
     
-    def confirm_keep_discover_pokemon(self, state: MessagesState):
+    def confirm_pokemon_existence(self, state: MessagesState):
+        """Handles user confirmation of the identified Pokémon and validates its existence using the PokéAPI"""
         SYSTEM_PROMPT = f"""
         You are an AI Assistant and your function is to identified if the pokemon that is being passed exists into the database from PokeAPI.
         Tool that will be used is pokemon_exists and will return a boolean weather exists or not.
@@ -515,6 +523,14 @@ class PokemonAgent:
             return {"messages": [self.model_with_tools_exists.invoke(messages)]}
 
     def should_continue_guesser(self, state: MessagesState):
+        """
+        Determines the next step in the Pokémon guessing workflow based on the latest message.
+    
+        - If a tool is triggered, it proceeds to run the Pokémon identification tool - tools_pokemon_guesser.
+        - If a valid Pokémon has been guessed, it proceeds to check whether it exists in the dataset - Option 2.
+        - If not enough information is available, it prompts the user to provide more clues - Option 1.
+        - If no tool is called and no guess is possible, it provides guidance on how the app works - guide_node.
+        """
         last_message = state["messages"][-1]
 
         # Checking if a tool will be called
@@ -533,6 +549,9 @@ class PokemonAgent:
                 return "guide_node"
 
     def should_continue_checker(self, state: MessagesState):
+        """
+        Determines whether the workflow should proceed to verify the Pokémon's existence.
+        """
         last_message = state["messages"][-1]
 
         # Achieving this edge it is already sure that you have a pokemon to check
@@ -542,13 +561,22 @@ class PokemonAgent:
             return END
 
     def creation_of_graph_workflow(self):
+        """
+        Workflow of the langgraph
+
+        This workflow defines the sequence of interaction nodes, including:
+        - Initial Pokémon guessing
+        - Pokémon Existence Evaluation
+        - Tool Nodes for Guessing and Checking
+        - Guidance prompts for user assistance
+        """
 
         tool_node_pokemon_guesser = ToolNode(tools = [self.identify_pokemon])
         tool_node_pokemon_checker = ToolNode(tools = [self.pokemon_exists])
         workflow = StateGraph(MessagesState)
     
-        workflow.add_node("chatbot", self.call_initial_discover_pokemon)
-        workflow.add_node("evaluator", self.confirm_keep_discover_pokemon)
+        workflow.add_node("chatbot", self.initial_pokemon_guess)
+        workflow.add_node("evaluator", self.confirm_pokemon_existence)
         workflow.add_node("tools_pokemon_guesser", tool_node_pokemon_guesser)
         workflow.add_node("tools_pokemon_checker", tool_node_pokemon_checker)
         workflow.add_node("guide_node", self.response_guide_node)
@@ -566,8 +594,13 @@ class PokemonAgent:
         return app
 
     def stream_memory_responses(self, user_input: str):
+        """
+        Streams the conversation with the Pokémon agent and retrieves the latest response generated by the model
+        """
         last_message = [event for event in self.app.stream({"messages": [("user", user_input)]}, self.config)][-1]
         last_key = list(last_message.keys())[0]
         return last_message.get(last_key).get('messages')[-1].content
+
+
 
         
