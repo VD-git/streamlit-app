@@ -358,6 +358,11 @@ class RAGLangChain:
         return {"response": response, "faithfulness": metric_faithfulness, "context_precision": metric_context, "pages": pages}
 
 class PokemonAgent:
+
+    POKEMON_NOT_IDENTIFIED = "```Not able to identified```"
+    POKEMON_NOT_EXIST = "```Pokémon does not exist```"
+    POKEMON_CONFIRMATIONS = ["yes", "y", "yep", "yeah"]
+
     def __init__(self):
         self.llm = AzureChatOpenAI(
             api_key = st.secrets['azure']['api_key'],
@@ -373,6 +378,10 @@ class PokemonAgent:
         self.POKEMON = None
         self.config = {"configurable": {"thread_id": "single_session_memory"}}
         self.app = self.creation_of_graph_workflow()
+
+    @staticmethod
+    def is_positive(resp: str) -> bool:
+        return resp.strip().lower() in PokemonAgent.POKEMON_CONFIRMATIONS
 
     @staticmethod
     @tool
@@ -402,9 +411,9 @@ class PokemonAgent:
         messages = [
             SystemMessage(
                 content=(
-                    """
+                    f"""
                     You are an AI Assistant and your function is to identified which is the pokemon that is based on the description given.
-                    In case it is not possible to identify reply exactly the following between triple backticks: ```Not able to identified```, just reply its name, nothing more"""
+                    In case it is not possible to identify reply exactly the following between triple backticks: {PokemonAgent.POKEMON_NOT_IDENTIFIED}, just reply its name, nothing more"""
                 )
             ),
             HumanMessage(content=f"Discover which one is my pokemon based on the description. Description: {description}")
@@ -454,10 +463,10 @@ class PokemonAgent:
         return {"messages": [AIMessage(content="Here you should provide info so I can find your pokemon. Or giving more features of it.")]}
     
     def call_initial_discover_pokemon(self, state: MessagesState):
-        SYSTEM_PROMPT = """
+        SYSTEM_PROMPT = f"""
         You are an AI Assistant and your function is to identified which is the pokemon that is based on the description given.
         Case the pokemon is not explicitable said you can use de tool identify_pokemon in order to help you find it.
-        In case it is not possible to identify which pokemon exactly, or you are not a 100 % sure, reply exactly the following between triple backticks: ```Not able to identified```.
+        In case it is not possible to identify which pokemon exactly, or you are not a 100 % sure, reply exactly the following between triple backticks: {self.POKEMON_NOT_IDENTIFIED}.
         When is sure of the pokemon, just reply its name, nothing more
         """
         print("CHATBOT")
@@ -470,7 +479,7 @@ class PokemonAgent:
             return {"messages": [AIMessage(content=f"Pokemon already discovered here: {self.POKEMON}. Reset the page if it's wanted another search.")]}
         # Response considering the feedback from the tool
         elif isinstance(last_message, ToolMessage):
-            if last_message.content == "```Not able to identified```":
+            if last_message.content == self.POKEMON_NOT_IDENTIFIED:
                 return {"messages": [AIMessage(content="Please, provide more info to identify the pokemon")]}
             else:
                 return {"messages": [AIMessage(content=f"Pokemon: {last_message.content}")]}
@@ -479,11 +488,10 @@ class PokemonAgent:
             return {"messages": [self.model_with_tools_identify.invoke(messages)]}
     
     def confirm_keep_discover_pokemon(self, state: MessagesState):
-        print("EVALUATOR")
-        SYSTEM_PROMPT = """
+        SYSTEM_PROMPT = f"""
         You are an AI Assistant and your function is to identified if the pokemon that is being passed exists into the database from PokeAPI.
         Tool that will be used is pokemon_exists and will return a boolean weather exists or not.
-        In case tool returns False, reply exactly the following between triple backticks:```Pokémon does not exist```
+        In case tool returns False, reply exactly the following between triple backticks: {self.POKEMON_NOT_EXIST}
         In case tool returns True, reply just the name of the pokemon.
         """
         last_messages, last_message = state["messages"], state["messages"][-1]
@@ -499,7 +507,7 @@ class PokemonAgent:
                 return {"messages": [AIMessage(content=f"Is your pokemon {pokemon}? Reply with **yes/y** if it is, or help giving more info about it :).")]}
             else:
                 return {"messages": [AIMessage(content=f"Pokemon {pokemon} does not exist in PokeAPI database, try another one, please")]}
-        elif self.retrieve_last_human_message(state).strip().lower() in ["yes", "y", "yep", "yeah"]:
+        elif self.is_positive(self.retrieve_last_human_message(state).strip().lower()):
             self.POKEMON = self.retrieve_pokemon_ai_message(state)
             return {"messages": [AIMessage(content=f"Great! We discovered your Pokémon! {self.POKEMON}")]}
         # Based on the human message i need to call a llm in order to have the possibility to call the tools
@@ -518,14 +526,13 @@ class PokemonAgent:
             if last_message.content == "Please, provide more info to identify the pokemon":
                 return END
             # Option 2 from the tool
-            elif ("Pokemon:" in last_message.content) or (self.retrieve_last_human_message(state).strip().lower() in ["yes", "y", "yep", "yeah"]):
+            elif ("Pokemon:" in last_message.content) or (self.is_positive(self.retrieve_last_human_message(state).strip().lower())):
                 return "evaluator"
             # Option if the tool wasn't even called
             else:
                 return "guide_node"
 
     def should_continue_checker(self, state: MessagesState):
-        print("CHECKER")
         last_message = state["messages"][-1]
 
         # Achieving this edge it is already sure that you have a pokemon to check
