@@ -71,7 +71,7 @@ if __name__ == "__main__":
         
         # Assistant
         time.sleep(1)
-        response = st.session_state.pokemon_call.stream_memory_responses(st.session_state.pending_message)
+        response = st.session_state.pokemon_call.stream_memory_responses(logger, st.session_state.pending_message)
         st.session_state.payload["messages"].append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
             st.markdown(response)
