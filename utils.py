@@ -465,7 +465,7 @@ class PokemonAgent:
         """Function that returns the last pokemon guesser"""
         # Here it has -2 because I will always check if the pokémon exists before trying to guess, being always last second tool
         try:
-            return [msg for msg in state["messages"] if isinstance(msg, ToolMessage)][-2].content
+            return [msg for msg in state["messages"] if (isinstance(msg, ToolMessage)) and (msg.content not in ['true', 'false', True, False]]
         except:
             return None
 
