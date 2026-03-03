@@ -1,4 +1,8 @@
 # Home.py
+# removing error from asyncio plus ragas
+import asyncio
+asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+
 import streamlit as st
 from utils import PokemonAgent
 
